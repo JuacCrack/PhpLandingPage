@@ -1,7 +1,7 @@
 <?php
 
 include_once 'utils/RequestHandler.php';
-include_once 'objects/item.php'; // Asegúrate de incluir el archivo Item.php si no lo has hecho.
+include_once 'objects/item.php'; 
 
     class Model {
         private $conn;

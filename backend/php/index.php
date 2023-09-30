@@ -6,12 +6,10 @@ header("Access-Control-Allow-Origin: *");
 include_once 'config/database.php';
 include_once 'objects/item.php';
 include_once 'utils/response.php';
-include_once 'models/Model.php'; // Importar la clase Model
-
+include_once 'models/Model.php';
 $db = new Database();
 $response = new Response();
 
-// Manejo de las peticiones
 $method = $_SERVER['REQUEST_METHOD'];
 
 switch ($method) {
@@ -40,7 +38,7 @@ switch ($method) {
             $result = $model->create();
     
             if ($result !== false) {
-                $response->send(200, $result); // Devuelve los datos en lugar de un mensaje
+                $response->send(200, $result); 
             } else {
                 $response->send(500, array("error" => "No se pudo insertar el registro"));
             }

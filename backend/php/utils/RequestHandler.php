@@ -1,6 +1,6 @@
 <?php 
 
-include_once 'utils/validations.php'; // Incluir la clase Validations
+include_once 'utils/validations.php';
 
 class RequestHandler {
     public static function processRequest() {
@@ -11,7 +11,6 @@ class RequestHandler {
         $data_array = $data['data'] ?? null;
         $id = $data['id'] ?? null;
 
-        // Crear un array combinado para validar todos los valores juntos
         $allValues = array(
             'table_name' => $table_name,
             'action' => $action,
