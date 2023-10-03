@@ -155,8 +155,12 @@ class Utils {
             try {
               const dataid = $(this).data('id');
               const datatable = $(this).data('table');
-              await APIMethods.postValue(dataid, datatable, title);
-              Utils.popup('reply', 'Categoría agregada con éxito', 'Categoría agregada con éxito', 200);
+              const response = await APIMethods.postValue(dataid, datatable, title);
+              if (response) {
+                Utils.popup('reply', 'Consulta realizada', 'Elemento agregado con éxito', 200);
+              } else {
+                Utils.popup('reply', 'No se pudo realizar la consulta', 'Consulte al servicio Tecnico', 500);
+              }
             } catch (error) {
               console.log(error);
             }
@@ -302,11 +306,11 @@ class APIMethods {
       const imagebool = await APIMethods.checkImageColumn(datatable);
       
       const response = await APIrequest.bridgeToAjax('POST', `${title}`, dataid, null, imagebool);
+      
+      await TableUtils.updateTable(datatable);
 
-      if (response) {
-        TableUtils.updateTable(datatable);
-        Utils.popup('reply', 'Categoría agregada con éxito', 'Categoría agregada con éxito', 200);
-      }
+      return response;
+
     } catch (error) {
       Utils.popup('reply', 'Error al agregar la categoría', 'Ocurrió un error al agregar la categoría', 500);
     }
@@ -344,10 +348,12 @@ class APIMethods {
           const table = $(this).data('table');
           const response = await APIMethods.deleteById(id, table);
           if (response) {
-            Utils.popup('reply', response.message, response.message, response.status);
+            Utils.popup('reply', 'Registro eliminado', 'Registro eliminado con éxito', 200);
+          } else {
+            Utils.popup('reply', 'No se pudo eliminar el registro', 'Consulte al servicio Tecnico', 500);
           }
         } catch (error) {
-          Utils.popup('reply', 'No se pudo eliminar el registro', error, 500);
+          
         }
       });
 
@@ -357,10 +363,12 @@ class APIMethods {
           const table = $(this).data('table');
           const response = await APIMethods.putById(id, table);
           if (response) {
-            Utils.popup('reply', response.message, response.message, response.status);
+            Utils.popup('reply', 'Registro Actualizado', 'Registro Actualizado con exito', 200);
+          } else {
+            Utils.popup('reply', 'No se pudo actualizar el registro', 'Consulte al servicio Tecnico', 500);
           }
         } catch (error) {
-          Utils.popup('reply', 'No se pudo actualizar el registro', error, 500);
+          
         }
       });
     } catch (error) {
@@ -643,13 +651,13 @@ class APIrequest {
           resolve(response);
         },
         error: function (xhr, status, error) {
-          const errorMessage = xhr.responseText;
-          reject(errorMessage);
+            reject(error);
+          
         },
       });
     });
   }
-
+  
   static async bridgeToAjax(method, table, id, action, image) {
     return new Promise(async (resolve, reject) => {
       try {
@@ -767,7 +775,6 @@ class APIrequest {
         }
       } catch (error) {
         reject(error);
-        console.log(error);
       }
     });
   }

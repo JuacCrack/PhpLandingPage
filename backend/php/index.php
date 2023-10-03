@@ -19,17 +19,16 @@ switch ($method) {
             $model = new Model($db);
             $result = $model->getAll();
     
-            if ($result) {
+            if ($result !== false) {
                 $response->send(200, $result);
             } else {
-                $response->send(204, array("message" => "No se encontraron elementos."));
+                $response->send(204, $result);
             }
-        } catch (PDOException $e) {
+        } catch (PDOException $pdoException) {
             $response->send(500, array(
-                'error' => 'Error en la consulta de la base de datos',
-                'message' => $e->getMessage()
+                'error' => $pdoException->getMessage(),
             ));
-        }
+        }    
     break;
 
     case 'POST':
@@ -38,14 +37,14 @@ switch ($method) {
             $result = $model->create();
     
             if ($result !== false) {
-                $response->send(200, $result); 
+                $response->send(200, $result);
             } else {
-                $response->send(500, array("error" => "No se pudo insertar el registro"));
+                $response->send(204, $result);
             }
-        } catch (PDOException $e) {
+
+        } catch (PDOException $pdoException) {
             $response->send(500, array(
-                'error' => 'Error en la consulta de la base de datos',
-                'message' => $e->getMessage()
+                'error' => $pdoException->getMessage(),
             ));
         }
     break;    
@@ -55,15 +54,14 @@ switch ($method) {
             $model = new Model($db);
             $result = $model->update();
 
-            if ($result) {
-                $response->send(200, array("message" => "Registro actualizado correctamente"));
+            if ($result !== false) {
+                $response->send(200, $result);
             } else {
-                $response->send(500, array("error" => "No se pudo actualizar el registro"));
+                $response->send(204, $result);
             }
-        } catch (PDOException $e) {
+        } catch (PDOException $pdoException) {
             $response->send(500, array(
-                'error' => 'Error en la consulta de la base de datos',
-                'message' => $e->getMessage()
+                'error' => $pdoException->getMessage(),
             ));
         }
     break;
@@ -73,15 +71,14 @@ switch ($method) {
             $model = new Model($db);
             $result = $model->delete();
     
-            if ($result) {
-                $response->send(200, array("message" => "Registro eliminado exitosamente"));
+            if ($result !== false) {
+                $response->send(200, $result);
             } else {
-                $response->send(500, array("error" => "No se pudo eliminar el registro"));
+                $response->send(204, $result);
             }
-        } catch (PDOException $e) {
+        } catch (PDOException $pdoException) {
             $response->send(500, array(
-                'error' => 'Error en la consulta de la base de datos',
-                'message' => $e->getMessage()
+                'error' => $pdoException->getMessage(),
             ));
         }
     break;

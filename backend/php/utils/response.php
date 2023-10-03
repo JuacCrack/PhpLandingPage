@@ -1,8 +1,11 @@
 <?php
 class Response {
-    public function send($status, $data) {
+    public function send($status, $data = null) {
         http_response_code($status);
-        echo json_encode($data);
+        
+        if ($data !== null) {
+            echo json_encode($data);
+        }
     }
 }
 ?>
