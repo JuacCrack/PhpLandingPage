@@ -18,10 +18,11 @@ class RequestHandler {
             'id' => $id
         );
 
-        $filteredData = Validations::filterData($allValues);
+        $filteredData = Validations::validateData($allValues);
 
         return $filteredData;
     }
 }
 
 ?>
+

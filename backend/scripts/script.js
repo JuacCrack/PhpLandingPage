@@ -257,7 +257,7 @@ class Pages {
           }
         }
       } catch (error) {
-        Utils.popup('reply', 'Acceso denegado', 'Por favor, verifique los datos', 500);
+        Utils.popup('reply', 'Acceso denegado', 'Por favor, verifique los datos', 401);
       }
     });
   }
@@ -640,6 +640,7 @@ class TableUtils {
 
 class APIrequest {
   static async sendAjaxRequest(jsonData) {
+    console.log(jsonData);
     return new Promise((resolve, reject) => {
       const url = `backend/php/index.php?table=${jsonData.table_name}&action=${jsonData.action || jsonData.method}`;
       $.ajax({
@@ -649,10 +650,11 @@ class APIrequest {
         contentType: 'application/json; charset=utf-8',
         success: function (response, status, xhr) {
           resolve(response);
+          console.log(response);
         },
         error: function (xhr, status, error) {
             reject(error);
-          
+            console.log(xhr);
         },
       });
     });

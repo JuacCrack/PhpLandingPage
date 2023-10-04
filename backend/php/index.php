@@ -4,9 +4,8 @@ header("Access-Control-Allow-Methods: GET, POST, PUT, DELETE");
 header("Access-Control-Allow-Origin: *");
 
 include_once 'config/database.php';
-include_once 'objects/item.php';
 include_once 'utils/response.php';
-include_once 'models/Model.php';
+include_once 'deployments/deployment.php';
 $db = new Database();
 $response = new Response();
 
@@ -16,8 +15,8 @@ switch ($method) {
 
     case 'GET':
         try {
-            $model = new Model($db);
-            $result = $model->getAll();
+            $deployment = new Deployment($db);
+            $result = $deployment->getAll();
     
             if ($result !== false) {
                 $response->send(200, $result);
@@ -33,13 +32,13 @@ switch ($method) {
 
     case 'POST':
         try {
-            $model = new Model($db);
-            $result = $model->create();
+            $deployment = new Deployment($db);
+            $result = $deployment->create();
     
             if ($result !== false) {
                 $response->send(200, $result);
             } else {
-                $response->send(204, $result);
+                $response->send(401, $result);
             }
 
         } catch (PDOException $pdoException) {
@@ -51,8 +50,8 @@ switch ($method) {
 
     case 'PUT':
         try {
-            $model = new Model($db);
-            $result = $model->update();
+            $deployment = new Deployment($db);
+            $result = $deployment->update();
 
             if ($result !== false) {
                 $response->send(200, $result);
@@ -68,8 +67,8 @@ switch ($method) {
 
     case 'DELETE':
         try {
-            $model = new Model($db);
-            $result = $model->delete();
+            $deployment = new Deployment($db);
+            $result = $deployment->delete();
     
             if ($result !== false) {
                 $response->send(200, $result);

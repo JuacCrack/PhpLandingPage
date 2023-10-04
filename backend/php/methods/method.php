@@ -1,6 +1,6 @@
 <?php 
 
-class Item {
+class Method {
     private $conn;
     private $table_name;
 
@@ -46,32 +46,6 @@ class Item {
             return false;
         }
     }
-    
-    public function login($data) {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE ";
-        $conditions = array();
-        $bindParams = $this->setField($data);
-
-        foreach ($bindParams as $field => $value) {
-            $conditions[] = substr($field, 1) . " = " . $field;
-        }
-
-        $query .= implode(" AND ", $conditions);
-
-        try {
-            $stmt = $this->conn->prepare($query);
-
-            foreach ($bindParams as $field => $value) {
-                $stmt->bindValue($field, $value);
-            }
-
-            $stmt->execute();
-
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $pdoException) {
-            return $pdoException->getMessage();
-        }
-    } 
                  
     public function update($id, $data) {
         $query = "UPDATE " . $this->table_name . " SET ";
@@ -111,42 +85,6 @@ class Item {
             return false;
         }
     }
-    
-    public function getTables($databaseName) {
-        try {
-            $query = "SELECT 
-                        TABLE_NAME AS 'table',
-                        COLUMN_NAME AS 'column',
-                        COLUMN_TYPE AS 'type',
-                        COLUMN_KEY AS 'key'
-                        FROM
-                        information_schema.columns
-                        WHERE
-                        TABLE_SCHEMA = :databaseName";
-
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':databaseName', $databaseName, PDO::PARAM_STR);
-            $stmt->execute();
-
-            $tableData = array();
-
-            while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-                $tableName = $row['table'];
-                unset($row['table']);
-
-                if (!isset($tableData[$tableName])) {
-                    $tableData[$tableName] = array();
-                }
-
-                $tableData[$tableName][] = $row;
-            }
-
-            return $tableData;
-        } catch (PDOException $pdoException) {
-            return $pdoException->getMessage();
-            return false;
-        }
-    }  
     
     public function delete($id) {
         try {
