@@ -1,5 +1,7 @@
 <?php 
 
+include_once 'utils/token.php';
+
 class utilsMethod {
 
     private $conn;
@@ -10,6 +12,51 @@ class utilsMethod {
         $this->table_name = $table_name;
     }
 
+    public function login($data) {
+        $query = "SELECT * FROM " . $this->table_name . " WHERE ";
+        $conditions = array();
+        $bindParams = $this->setField($data);
+    
+        foreach ($bindParams as $field => $value) {
+            $conditions[] = substr($field, 1) . " = " . $field;
+        }
+    
+        $query .= implode(" AND ", $conditions);
+    
+        try {
+            $stmt = $this->conn->prepare($query);
+    
+            foreach ($bindParams as $field => $value) {
+                $stmt->bindValue($field, $value);
+            }
+    
+            $stmt->execute();
+    
+            $userResponse = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    
+            if ($userResponse) {
+                $classToken = new Token($this->conn);
+    
+                if ($classToken->isTokenValid($userResponse['id'])) {
+                    $token = $classToken->getTokenForUser($userResponse);
+                    return $token;
+                } else {
+                    $newToken = $classToken->generateToken($userResponse);
+                    return $newToken;
+                }
+            } else {
+                return false;
+            }
+    
+        } catch (PDOException $pdoException) {
+            echo "PDO Exception: ";
+            echo $pdoException->getMessage();
+            return $pdoException->getMessage();
+        }
+    }
+    
+    
     public function setField($data) {
         $bindParams = array();
 
@@ -40,32 +87,6 @@ class utilsMethod {
             return $pdoException->getMessage();
         }
     }
-    
-    public function login($data) {
-        $query = "SELECT * FROM " . $this->table_name . " WHERE ";
-        $conditions = array();
-        $bindParams = $this->setField($data);
-
-        foreach ($bindParams as $field => $value) {
-            $conditions[] = substr($field, 1) . " = " . $field;
-        }
-
-        $query .= implode(" AND ", $conditions);
-
-        try {
-            $stmt = $this->conn->prepare($query);
-
-            foreach ($bindParams as $field => $value) {
-                $stmt->bindValue($field, $value);
-            }
-
-            $stmt->execute();
-
-            return $stmt->fetch(PDO::FETCH_ASSOC);
-        } catch (PDOException $pdoException) {
-            return $pdoException->getMessage();
-        }
-    } 
 
     public function getTables($databaseName) {
         try {

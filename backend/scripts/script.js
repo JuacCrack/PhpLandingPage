@@ -85,7 +85,7 @@ class Utils {
     }
   }
 
-  static popup(type, title, message, status, detailserror, id, response) {
+  static popup(type, title, message, status, detailserror, token, response) {
 
     window.location.href = "#";
 
@@ -155,7 +155,7 @@ class Utils {
             try {
               const dataid = $(this).data('id');
               const datatable = $(this).data('table');
-              const response = await APIMethods.postValue(dataid, datatable, title);
+              const response = await APIMethods.postValue(dataid, datatable, title, token);
               if (response) {
                 Utils.popup('reply', 'Consulta realizada', 'Elemento agregado con éxito', 200);
               } else {
@@ -252,8 +252,12 @@ class Pages {
 
         if (response) {
           const category = response.category;
-          if (category && typeof Pages[category] === 'function') {
-            Pages[category]();
+          const token = response.token;
+          console.log(category,token);
+          if (token && category && typeof Pages[category] === 'function') {
+            Pages[category](token);
+          } else {
+            Utils.popup('reply', 'Acceso denegado', 'Por favor, verifique los datos', 401);
           }
         }
       } catch (error) {
@@ -262,11 +266,12 @@ class Pages {
     });
   }
 
-  static async Design() {
+  static async Design(token) {
+    console.log(token);
     try {
       Components.initHome();
       Components.initCopyright();
-      const response = await APIrequest.bridgeToAjax('GET', null, null, 'GETALL');
+      const response = await APIrequest.bridgeToAjax('GET', null, null, 'GETALL', null, token);
       const bodyElement = $('.body');
       bodyElement.html('');
       const designDiv = $('<div>').addClass('design');
@@ -290,24 +295,27 @@ class Pages {
       $('.btn-new').on('click', function () {
         const tableName = $(this).data('id');
         const filteredTableInfo = { [tableName]: response[tableName] };
-        Utils.popup('post-values-table', `${tableName}`, null, null, null, null, filteredTableInfo);
+        Utils.popup('post-values-table', `${tableName}`, null, null, null, token, filteredTableInfo);
       });
 
-      APIMethods.getAll();
+      APIMethods.getAll(token);
     } catch (error) {
       Utils.popup('reply', 'No se pudieron generar las tablas', error, 500);
     }
   }
+  static async Front (token) {
+    
+  }
 }
 
 class APIMethods {
-  static async postValue(dataid, datatable, title) {
+  static async postValue(dataid, datatable, title, token) {
     try {
-      const imagebool = await APIMethods.checkImageColumn(datatable);
+      const imagebool = await APIMethods.checkImageColumn(datatable, token);
       
-      const response = await APIrequest.bridgeToAjax('POST', `${title}`, dataid, null, imagebool);
+      const response = await APIrequest.bridgeToAjax('POST', `${title}`, dataid, null, imagebool, token);
       
-      await TableUtils.updateTable(datatable);
+      await TableUtils.updateTable(datatable, token);
 
       return response;
 
@@ -316,37 +324,37 @@ class APIMethods {
     }
   }
 
-  static async deleteById(id, table) {
+  static async deleteById(id, table, token) {
     try {
-      const response = await APIrequest.bridgeToAjax('DELETE', table, id);
-      await TableUtils.updateTable(table);
+      const response = await APIrequest.bridgeToAjax('DELETE', table, id, null, null, token);
+      await TableUtils.updateTable(table, token);
       return response;
     } catch (error) {
       throw error;
     }
   }
 
-  static async putById(id, table) {
+  static async putById(id, table, token) {
     try {
-      const imagebool = await APIMethods.checkImageColumn(table);
-      const response = await APIrequest.bridgeToAjax('PUT', table, id, null, imagebool);
-      await TableUtils.updateTable(table);
+      const imagebool = await APIMethods.checkImageColumn(table, token);
+      const response = await APIrequest.bridgeToAjax('PUT', table, id, null, imagebool, token);
+      await TableUtils.updateTable(table, token);
       return response;
     } catch (error) {
       throw error;
     }
   }
 
-  static async getAll() {
+  static async getAll(token) {
     try {
-      const combinedDataValues = await TableUtils.combinedData();
+      const combinedDataValues = await TableUtils.combinedData(token);
       TableUtils.generateTable(combinedDataValues);
 
       $(document).off('click', `.delete-btn`).on('click', `.delete-btn`, async function () {
         try {
           const id = $(this).data('id');
           const table = $(this).data('table');
-          const response = await APIMethods.deleteById(id, table);
+          const response = await APIMethods.deleteById(id, table, token);
           if (response) {
             Utils.popup('reply', 'Registro eliminado', 'Registro eliminado con éxito', 200);
           } else {
@@ -361,7 +369,7 @@ class APIMethods {
         try {
           const id = $(this).data('id');
           const table = $(this).data('table');
-          const response = await APIMethods.putById(id, table);
+          const response = await APIMethods.putById(id, table, token);
           if (response) {
             Utils.popup('reply', 'Registro Actualizado', 'Registro Actualizado con exito', 200);
           } else {
@@ -376,8 +384,8 @@ class APIMethods {
     }
   }
 
-  static async checkImageColumn(table) {
-    const tableStructure = await APIrequest.bridgeToAjax('GET', null, null, 'GETALL');
+  static async checkImageColumn(table, token) {
+    const tableStructure = await APIrequest.bridgeToAjax('GET', null, null, 'GETALL', null, token);
     const columnToCheck = {
       "column": "image",
       "type": "longtext",
@@ -461,8 +469,7 @@ class TableUtils {
                       </div>
                     `;
                   } else {
-                    // Generar una ID aleatoria diferente para cada input normal
-                    const RandomId = Math.random().toString(36).substring(2); // Convierte a base 36
+                    const RandomId = Math.random().toString(36).substring(2);
 
                     inputHTML = `<input type="${inputType}" name="${columnName}" id="${RandomId}" class="input value-${tableName}-${row.id}" placeholder="Enter ${columnName}" value="${columnValue}" data-id="${row.id}">`;
                   }
@@ -524,14 +531,14 @@ class TableUtils {
     return inputElements;
   }
 
-  static async combinedData() {
+  static async combinedData(token) {
     const combinedData = {};
 
-    const response = await APIrequest.bridgeToAjax('GET', null, null, 'GETALL');
+    const response = await APIrequest.bridgeToAjax('GET', null, null, 'GETALL', null, token);
 
     for (const tableName in response) {
       if (response.hasOwnProperty(tableName)) {
-        const valuesResponse = await APIrequest.bridgeToAjax('GET', tableName);
+        const valuesResponse = await APIrequest.bridgeToAjax('GET', tableName, null, null, null, token);
 
         combinedData[tableName] = {
           columns: response[tableName],
@@ -543,9 +550,9 @@ class TableUtils {
     return TableUtils.generateInputs(combinedData, true);
   }
 
-  static async updateTable(table) {
+  static async updateTable(table, token) {
     try {
-      const combinedDataValues = await TableUtils.combinedData();
+      const combinedDataValues = await TableUtils.combinedData(token);
       const filteredData = {};
 
       if (combinedDataValues.hasOwnProperty(table)) {
@@ -635,12 +642,11 @@ class TableUtils {
       }
     }
   }
-
 }
 
 class APIrequest {
   static async sendAjaxRequest(jsonData) {
-    console.log(jsonData);
+    //console.log(jsonData);
     return new Promise((resolve, reject) => {
       const url = `backend/php/index.php?table=${jsonData.table_name}&action=${jsonData.action || jsonData.method}`;
       $.ajax({
@@ -650,7 +656,7 @@ class APIrequest {
         contentType: 'application/json; charset=utf-8',
         success: function (response, status, xhr) {
           resolve(response);
-          console.log(response);
+          //console.log(response);
         },
         error: function (xhr, status, error) {
             reject(error);
@@ -660,7 +666,7 @@ class APIrequest {
     });
   }
   
-  static async bridgeToAjax(method, table, id, action, image) {
+  static async bridgeToAjax(method, table, id, action, image, token) {
     return new Promise(async (resolve, reject) => {
       try {
         Utils.mostrarPreloader(true);
@@ -674,6 +680,7 @@ class APIrequest {
               table_name: table,
               id: id,
               action: action || method,
+              token: token,
             };
             break;
 
@@ -691,6 +698,7 @@ class APIrequest {
                 id: id,
                 action: action || method,
                 data: postData,
+                token: token,
               };
             } else {
               const postData = {};
@@ -716,6 +724,7 @@ class APIrequest {
                 id: id,
                 action: action || method,
                 data: postData,
+                token: token,
               };
             }
             break;
@@ -746,6 +755,7 @@ class APIrequest {
               id: id,
               action: action || method,
               data: putData,
+              token: token,
             };
             break;
 
@@ -755,6 +765,7 @@ class APIrequest {
               table_name: table,
               id: id,
               action: action || method,
+              token: token,
             };
             break;
 
@@ -840,7 +851,6 @@ class APIUtils {
         var img = new Image();
 
         img.onload = function () {
-          // Crear un canvas
           var canvas = document.createElement('canvas');
           var ctx = canvas.getContext('2d');
 
